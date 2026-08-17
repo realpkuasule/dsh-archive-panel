@@ -182,8 +182,14 @@ unarchiveSession(sessionId) {
 
 | 轨道 | 位置 | 状态 |
 | --- | --- | --- |
-| 动态插件 `archv-1/pkg-1` | 会话级动态插件（cordis_define/run） | ✅ **运行中**（run-1 已激活，立即可用） |
-| profile 插件 `archived-panel` | `<DSH_HOME>/profiles/web/plugins/archived-panel/`（源码）+ `<DSH_HOME>/profiles/node_modules/archived-panel/`（安装）+ `cordis.patch.yml` 一行 insert | ✅ 已安装，**重启 DSH 后自动生效**（免审批、跨重启持久） |
+| 动态插件 `archv-1/pkg-1` | 会话级动态插件（cordis_define/run） | ✅ 曾运行（开发期验证用；进程重启后消失） |
+| **官方 bundle** `dsh-archive-panel` | `plugins/dsh-archive-panel/`（包：`package.json` 声明 `dsh.bundle.patch` + `dsh.client`，`cordis.patch.yml` 层，`lib/{index.js,client.js}`） | ✅ **当前交付形态**：`dsh plugin --profile web add` 安装（或手动复制 + patch 行），重启后自动生效 |
+
+**Bundle 化（按官方规范 `docs/user/develop/basic/publish.md`）**：
+- 包名遵循官方惯例 `dsh-<name>`（`dsh-archive-panel`，与 repo 名一致）；
+- `dsh.bundle.patch: "./cordis.patch.yml"`：bundle 层在 profile 组合时按序应用（dsh-base → dsh-web-app → dsh-archive-panel → 用户层），插入插件行 `- id: dsh-archive-panel / name: dsh-archive-panel`；
+- `dsh.client.platform: "web"` + `exports["./client"]`：client-modules 扫描并 serve `/plugins/dsh-archive-panel/client.js`；
+- 纯 JS 无构建产物：git 安装无需 `prepare` 脚本、无需 pnpm `allowBuilds`（官方文档明确的构建脚本例外不适用）。
 
 **profile 化与动态版的差异**（profile client 无 `harness`/`host`/`styles` builtin）：
 - RPC 通道改为 HTTP：host 半 `ctx.webServer.register` 两个端点（`POST /archived/unarchive`、`POST /archived/preview`），client 半 `fetch` 调用；
@@ -201,8 +207,8 @@ unarchiveSession(sessionId) {
 
 ### 9.3 使用说明
 
-1. 当前（动态版）：侧边栏底部 Settings 旁「已归档 (15)」→ 抽屉查看/恢复；
-2. 重启 `dsh web` 后（profile 版）：同一 UI 自动接管，动态插件定义随进程消失，无需任何操作；
+1. 安装：`dsh plugin --profile web add ./dsh-archive-panel`（或 `github:realpkuasule/dsh-archive-panel`），或手动复制 + patch 行（README Option B）；
+2. 重启 `dsh web` 后生效：侧边栏底部 Settings 旁「已归档 (N)」→ 抽屉查看/恢复；
 3. 恢复的会话立即出现在官方侧边栏原工作区原位（`host/archived-sessions-changed` 自动推送）。
 
 ---

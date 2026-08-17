@@ -1,0 +1,27 @@
+{
+  "name": "dsh-archive-panel",
+  "version": "0.1.0",
+  "description": "Archived sessions viewer + unarchive panel for DeepSeek Harness: sidebar entry and a drawer that lists every archived session (title, workspace, last activity, cwd, id, message preview) with single/batch/unarchive-all restore.",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "package.json"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "license": "MIT"
+}

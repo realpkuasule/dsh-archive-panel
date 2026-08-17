@@ -1,4 +1,4 @@
-// archived-panel — browser half.
+// dsh-archive-panel — browser half.
 // Bundle format mirrors the shipped dsh-client-ui-* packages:
 // window.__ModuleLoader__.load({ id, factory }) with the package name as id.
 // - inject: ["slots", "timer"]
@@ -8,7 +8,7 @@
 // - style injection: the factory-owned <style> tag is claimed by the module
 //   system (claimStyles) for HMR cleanup.
 window.__ModuleLoader__.load({
-	id: "archived-panel",
+	id: "dsh-archive-panel",
 	factory: (require) => {
 		var module = { exports: {} };
 		var exports = module.exports;
@@ -183,7 +183,7 @@ window.__ModuleLoader__.load({
 
 			// ---- entry button in the sidebar footer ----
 			slots.inject("sidebar.footer.action", () => slots.register(
-				{ name: "sidebar.footer.action", id: "archived-panel", order: 10 },
+				{ name: "sidebar.footer.action", id: "dsh-archive-panel", order: 10 },
 				(props) => {
 					const [open, setOpenLocal] = usePanelOpen();
 					const count = props.useWorkspaces((state) => state.archivedSessionIds.length);

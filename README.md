@@ -24,20 +24,37 @@ This plugin completes the loop:
 
 ## Install
 
-> A **profile plugin** (a local package in the DSH web profile) — no build step, no dynamic-plugin approval, survives restarts.
+> A standard DSH **profile bundle** (official external-plugin distribution path per [docs/user/develop/basic/publish.md](https://github.com/deepseek-ai/deepseek-harness/blob/main/docs/user/develop/basic/publish.md)): the package declares `dsh.bundle.patch`, `dsh plugin` installs it, and the profile composes its `cordis.patch.yml` layer. No build step — this package ships plain JS, so git installs need neither a `prepare` script nor an `allowBuilds` entry.
+
+### Option A — official `dsh plugin` (recommended)
+
+```bash
+# From a directory that contains this checkout:
+dsh plugin --profile web add ./dsh-archive-panel
+# or straight from GitHub (plain JS, no build permission needed):
+#   dsh plugin --profile web add github:realpkuasule/dsh-archive-panel
+
+# Verify the composed layer without booting:
+dsh --profile web --dump-config | grep -A2 dsh-archive-panel
+```
+
+`dsh plugin` links the package, records it in the profile's dependencies, and appends `dsh-archive-panel` to `dsh.profile.bundles`.
+
+### Option B — manual (no CLI)
 
 ```bash
 # 1. Copy the package into your profile's node_modules
 DSH_HOME="${DSH_HOME:-$HOME/.dsh}"
-mkdir -p "$DSH_HOME/profiles/node_modules/archived-panel"
-cp -R plugins/archived-panel/. "$DSH_HOME/profiles/node_modules/archived-panel/"
+mkdir -p "$DSH_HOME/profiles/node_modules/dsh-archive-panel"
+cp -R plugins/dsh-archive-panel/. "$DSH_HOME/profiles/node_modules/dsh-archive-panel/"
 # (mirror the structure of dsh-session-id-footer in the same directory)
 ```
 
 ```yaml
-# 2. Register it in $DSH_HOME/profiles/web/cordis.patch.yml (add to an `- insert:` list)
-    - id: archived-panel
-      name: 'archived-panel'
+# 2. Add the bundle layer to $DSH_HOME/profiles/web/cordis.patch.yml
+#    (an `- insert:` list entry — same shape as the bundle's own patch file)
+    - id: dsh-archive-panel
+      name: dsh-archive-panel
 ```
 
 ```bash
@@ -74,11 +91,12 @@ dsh-archive-panel/
 ├── DESIGN.md              # full design doc: research, decisions, risks, verification
 ├── LICENSE                # MIT
 └── plugins/
-    └── archived-panel/
-        ├── package.json   # dsh.client.platform: web declaration
+    └── dsh-archive-panel/
+        ├── package.json   # dsh.bundle.patch + dsh.client.platform: web declarations
+        ├── cordis.patch.yml   # the bundle's patch layer (inserts the plugin row)
         └── lib/
             ├── index.js   # host half
-            └── client.js  # browser half
+            └── client.js  # browser half (__ModuleLoader__ bundle)
 ```
 
 ## License

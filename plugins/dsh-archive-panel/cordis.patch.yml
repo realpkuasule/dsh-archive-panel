@@ -1,0 +1,7 @@
+# dsh-archive-panel bundle patch layer.
+# Applied as one insert over the profile root (after the dsh-base and
+# dsh-web-app bundle layers). The plugin row references the package by name
+# so Node resolution finds the installed bundle code.
+- insert:
+    - id: dsh-archive-panel
+      name: dsh-archive-panel

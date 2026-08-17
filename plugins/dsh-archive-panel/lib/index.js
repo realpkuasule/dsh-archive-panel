@@ -1,4 +1,4 @@
-// archived-panel — host half (profile plugin).
+// dsh-archive-panel — host half (profile bundle plugin).
 //
 // 1) unarchiveSession instance patch on the workspace registry:
 //    mirrors the shipped archiveSession write path exactly
@@ -49,7 +49,7 @@ function idsOf(value) {
 }
 
 export default {
-  name: 'archived-panel',
+  name: "dsh-archive-panel",
   inject: ['workspaceRegistry', 'webServer'],
   apply(ctx) {
     const registry = ctx.workspaceRegistry
@@ -111,7 +111,7 @@ export default {
               try {
                 await registry.unarchiveSession(id)
               } catch (error) {
-                console.error('[archived-panel] unarchive failed for', id, error)
+                console.error('[dsh-archive-panel] unarchive failed for', id, error)
               }
             }
             send(res, 200, { ok: true, archivedSessionIds: [...registry.archivedSessionIds] })
@@ -151,7 +151,7 @@ export default {
                     }
                   }
                 } catch (error) {
-                  console.error('[archived-panel] preview failed for', id, error)
+                  console.error('[dsh-archive-panel] preview failed for', id, error)
                 }
               }
               items.push({ id, preview, updatedAt })
