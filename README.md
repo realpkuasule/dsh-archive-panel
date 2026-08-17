@@ -2,7 +2,7 @@
 
 **View and unarchive archived sessions in DeepSeek Harness (DSH).**
 
-DeepSeek Harness 侧边栏「已归档」面板：查看全部已归档会话（标题 / 工作区 / 最后活跃时间 / cwd / 会话 ID / 最近消息摘要），支持单个、批量与全部取消归档（unarchive）。
+[中文](README.zh.md) | English
 
 ## Why
 
@@ -24,7 +24,7 @@ This plugin completes the loop:
 
 ## Install
 
-> A standard DSH **profile bundle** (official external-plugin distribution path per [docs/user/develop/basic/publish.md](https://github.com/deepseek-ai/deepseek-harness/blob/main/docs/user/develop/basic/publish.md)): the package declares `dsh.bundle.patch`, `dsh plugin` installs it, and the profile composes its `cordis.patch.yml` layer. No build step — this package ships plain JS, so git installs need neither a `prepare` script nor an `allowBuilds` entry.
+> A standard DSH **profile bundle** (the official external-plugin distribution path per [docs/user/develop/basic/publish.md](https://github.com/deepseek-ai/deepseek-harness/blob/main/docs/user/develop/basic/publish.md)): the package declares `dsh.bundle.patch`, `dsh plugin` installs it, and the profile composes its `cordis.patch.yml` layer. No build step — this package ships plain JS, so git installs need neither a `prepare` script nor an `allowBuilds` entry.
 
 ### Option A — official `dsh plugin` (recommended)
 
@@ -87,7 +87,8 @@ Node (index.js, profile Cordis plugin)
 
 ```
 dsh-archive-panel/
-├── README.md
+├── README.md              # English
+├── README.zh.md           # 中文
 ├── DESIGN.md              # full design doc: research, decisions, risks, verification
 ├── LICENSE                # MIT
 └── plugins/
