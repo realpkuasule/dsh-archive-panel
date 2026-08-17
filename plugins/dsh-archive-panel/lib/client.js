@@ -133,6 +133,13 @@ window.__ModuleLoader__.load({
 				display: flex; gap: 8px; justify-content: flex-end;
 				padding: 12px 16px; border-top: 1px solid var(--dsw-alias-border-l1, #333);
 			}
+			/* Sidebar footer layout fix: the shipped Cordis occupant claims the
+			   whole footer-actions row, so give this entry its own wrapped line.
+			   The selector matches the semantic class suffix so it survives
+			   CSS-module hash changes across DSH updates. */
+			[class*="footerActions"] { flex-wrap: wrap; }
+			.archv-entry { flex: 0 0 100%; width: 100%; }
+			[class*="collapsed"] .archv-entry { flex: 0 0 auto; width: auto; }
 		`;
 		document.head.appendChild(style);
 
@@ -182,6 +189,10 @@ window.__ModuleLoader__.load({
 			}
 
 			// ---- entry button in the sidebar footer ----
+			// The footer actions row is a single-line flex container whose shipped
+			// Cordis occupant claims the full row width, so a second occupant would
+			// overflow and get clipped by the sidebar column. CSS below wraps the
+			// row and gives this entry its own full-width line instead.
 			slots.inject("sidebar.footer.action", () => slots.register(
 				{ name: "sidebar.footer.action", id: "dsh-archive-panel", order: 10 },
 				(props) => {
