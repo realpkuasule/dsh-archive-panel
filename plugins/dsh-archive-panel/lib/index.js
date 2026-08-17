@@ -81,10 +81,11 @@ export default {
     })
 
     // ---- inject the per-process token into every index page ----
-    const tapIndex = ctx.webServer.tapIndex((html) =>
+    // NOTE: pass the registration inside the effect setup — calling the
+    // disposer directly would unregister the tap immediately.
+    ctx.effect(() => ctx.webServer.tapIndex((html) =>
       html.replace('</head>', `<script>window.__DSH_ARCHIVED_TOKEN__=${JSON.stringify(TOKEN)}</script></head>`),
-    )
-    ctx.effect(tapIndex)
+    ))
 
     const guard = (req, res, next) => {
       if (req.headers['x-archived-token'] !== TOKEN) {
