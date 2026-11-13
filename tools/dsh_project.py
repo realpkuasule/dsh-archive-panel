@@ -758,11 +758,11 @@ python3 tools/dsh_project.py changelog check
 
 def generated_gitignore(profile: str, roles: Dict[str, str], mode: str, extra: List[str]) -> str:
     base = list(PROFILES.get(profile, {}).get("gitignore", []))
-    for line in default_ignore_globs(roles, mode):
-        if line not in base:
-            base.append(line)
-    base += [x for x in extra if x not in base]
-    return "\n".join(["# DSH 全局布局规范 v1（dsh-layout/1）", *base, ""])
+    # 目录/路径类以 marker 的 ignore_globs 为准（已剔除 tracked deliverables 等同名角色路径）；
+    # profile 只贡献文件模式（*.pyc / *.log / *.egg-info/ / .DS_Store）。
+    file_patterns = [x for x in base if any(ch in x for ch in "*?[") or x == ".DS_Store"]
+    lines = list(dict.fromkeys(file_patterns + list(extra)))
+    return "\n".join(["# DSH 全局布局规范 v1（dsh-layout/1）", *lines, ""])
 
 
 def generated_ci() -> str:
