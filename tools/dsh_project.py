@@ -225,7 +225,12 @@ def path_matches_glob(rel: str, glob: str) -> bool:
 
 
 def default_ignore_globs(roles: Dict[str, str], mode: str) -> List[str]:
-    out: List[str] = list(COMMON_IGNORE_GLOBS)
+    # 显式角色路径优先：deliverables/core 等恰好叫 dist/build 时，不被公共忽略表压过
+    role_paths = {str(p).rstrip("/"): role for role, p in roles.items()}
+    out: List[str] = [
+        g for g in COMMON_IGNORE_GLOBS
+        if not (g.rstrip("/") in role_paths and role_paths[g.rstrip("/")] != "derived")
+    ]
     if roles.get("derived"):
         out.append(str(roles["derived"]).rstrip("/") + "/")
     if mode == "local" and roles.get("deliverables"):
@@ -235,7 +240,7 @@ def default_ignore_globs(roles: Dict[str, str], mode: str) -> List[str]:
         out += [f"{base}/legacy/", f"{base}/external/"]
     if roles.get("preview"):
         out.append(str(roles["preview"]))
-    return out
+    return list(dict.fromkeys(out))
 
 
 def validate_layout(data: Dict[str, Any]) -> List[str]:
@@ -255,6 +260,8 @@ def validate_layout(data: Dict[str, Any]) -> List[str]:
             continue
         if Path(path).is_absolute():
             errs.append(f"{LAYOUT_FILE}.roles.{role} 不能是绝对路径：{path}")
+        if ".." in Path(path).parts:
+            errs.append(f"{LAYOUT_FILE}.roles.{role} 不能包含 ..：{path}")
         top = path.rstrip("/").split("/")[0]
         if top in seen and seen[top] != role:
             errs.append(f"{LAYOUT_FILE}.roles 中 {role} 与 {seen[top]} 共用顶层 {top}/")
@@ -904,9 +911,16 @@ def cmd_init(args: argparse.Namespace) -> int:
                 merged["required_root"] = old.get("required_root", required_root)
                 merged["root_files"] = sorted(set(old.get("root_files", []) + root_files))
                 merged["dir_readmes"] = sorted(set(old.get("dir_readmes", []) + dir_readmes))
+                old_globs = (old.get("tracking") or {}).get("ignore_globs")
+                if args.ignore_globs:
+                    merged_globs = ignore_globs          # 显式给出 → 完全替换
+                elif old_globs is not None:
+                    merged_globs = old_globs             # 未给出 → 保留既有，避免默认表回流
+                else:
+                    merged_globs = ignore_globs
                 track = {**old.get("tracking", {}),
                          "deliverables_mode": old.get("tracking", {}).get("deliverables_mode", mode),
-                         "ignore_globs": sorted(set(old.get("tracking", {}).get("ignore_globs", []) + ignore_globs))}
+                         "ignore_globs": sorted(set(merged_globs))}
                 merged["tracking"] = track
                 atomic_write_text(target, json.dumps(merged, ensure_ascii=False, indent=2) + "\n")
                 plan.append(f"MERGE {rel}")
