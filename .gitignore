@@ -1,0 +1,9 @@
+# DSH 全局布局规范 v1（dsh-layout/1）
+__pycache__/
+*.pyc
+.DS_Store
+*.log
+node_modules/
+.venv/
+dist/
+build/

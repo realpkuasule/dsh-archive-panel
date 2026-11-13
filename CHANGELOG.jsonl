@@ -1,0 +1,1 @@
+{"schema": "dsh-changelog/1", "ts": "2026-11-13T16:08:37+09:00", "kind": "chore", "summary": "接入 DSH 全局项目规范 v1（A 档 adopt）", "task": "T-0001", "scope": ["."], "agent": "lead"}

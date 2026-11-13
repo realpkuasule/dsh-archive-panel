@@ -1,0 +1,26 @@
+{
+  "schema": "dsh-task/1",
+  "project": "dsh-archive-panel",
+  "created": "2026-11-13T16:08:34+09:00",
+  "updated": "2026-11-13T16:08:37+09:00",
+  "tasks": [
+    {
+      "id": "T-0001",
+      "title": "按 DSH 全局规范接入（A 档 adopt：根文件 + TASK/CHANGELOG + CI + vendored CLI）",
+      "status": "done",
+      "priority": "P1",
+      "owner": "lead",
+      "created": "2026-11-13T16:08:37+09:00",
+      "updated": "2026-11-13T16:08:37+09:00",
+      "done_at": "2026-11-13T16:08:37+09:00",
+      "blocked_reason": null,
+      "tags": [],
+      "depends_on": [],
+      "scope": [
+        "."
+      ],
+      "notes": "",
+      "evidence": []
+    }
+  ]
+}
