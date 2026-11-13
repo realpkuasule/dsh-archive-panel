@@ -23,6 +23,7 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import os
 import re
@@ -49,6 +50,9 @@ HIDDEN_ALLOW = {".git", ".github", ".gitignore", ".gitattributes", LAYOUT_FILE}
 JUNK_PARTS = {"__pycache__", ".pytest_cache", ".mypy_cache"}
 JUNK_SUFFIXES = (".pyc", ".pyo", ".log")
 JUNK_NAMES = {".DS_Store", "Thumbs.db"}
+# 常见生态产物目录：默认视为不入库（与 scaffold 生成的 .gitignore 对齐；仍可由 --ignore-globs 覆盖）
+COMMON_IGNORE_GLOBS = ["node_modules/", ".venv/", "dist/", "build/", "out/",
+                       "coverage/", ".next/", "target/", ".pytest_cache/", "__pycache__/"]
 
 PROFILES: Dict[str, Dict[str, Any]] = {
     "empty": {
@@ -209,8 +213,19 @@ def load_layout(root: Path) -> Dict[str, Any]:
     return data
 
 
+def path_matches_glob(rel: str, glob: str) -> bool:
+    """ignore_globs 支持目录前缀与 fnmatch 通配（如 *.egg-info）。"""
+    g = str(glob).strip().rstrip("/")
+    if not g:
+        return False
+    if any(ch in g for ch in "*?["):
+        return (fnmatch.fnmatch(rel, g) or fnmatch.fnmatch(rel, g + "/*")
+                or fnmatch.fnmatch(rel.split("/", 1)[0], g))
+    return rel == g or rel.startswith(g + "/")
+
+
 def default_ignore_globs(roles: Dict[str, str], mode: str) -> List[str]:
-    out: List[str] = []
+    out: List[str] = list(COMMON_IGNORE_GLOBS)
     if roles.get("derived"):
         out.append(str(roles["derived"]).rstrip("/") + "/")
     if mode == "local" and roles.get("deliverables"):
@@ -815,6 +830,9 @@ def cmd_init(args: argparse.Namespace) -> int:
         "dir_readmes": dir_readmes,
         "tracking": {"deliverables_mode": mode, "ignore_globs": ignore_globs},
     }
+    marker_errs = validate_layout(marker)
+    if marker_errs:
+        fail("布局参数不合法（未写盘）：" + "；".join(marker_errs[:5]), 2)
     generated = {
         "README.md": generated_readme(name, profile, roles, required_root),
         "AGENTS.md": generated_agents(name),
@@ -822,13 +840,14 @@ def cmd_init(args: argparse.Namespace) -> int:
         LAYOUT_FILE: json.dumps(marker, ensure_ascii=False, indent=2) + "\n",
         TASK_FILE: json.dumps({"schema": TASK_SCHEMA, "project": name, "created": now_iso(),
                                "updated": now_iso(), "tasks": []}, ensure_ascii=False, indent=2) + "\n",
-        ".github/workflows/dsh-layout.yml": generated_ci(),
     }
     docs_role = roles.get("docs")
     if docs_role:
         generated[f"{str(docs_role).rstrip('/')}/README.md"] = (
             f"# {docs_role} — {name} 文档\n\n文档索引。新增文档必须登记到这里。\n"
         )
+    if roles.get("tools"):
+        generated[".github/workflows/dsh-layout.yml"] = generated_ci()
     preview = roles.get("preview")
     if preview and Path(str(preview)).suffix:
         generated[str(preview)] = (
@@ -910,17 +929,20 @@ def cmd_init(args: argparse.Namespace) -> int:
                 role = next((r for r, p in roles.items() if p.rstrip("/") == d), d)
                 rp.write_text(f"# {d} — {ROLE_DESC.get(role, role)}\n\n本目录角色：`{role}`（见根 `.dsh-layout.json`）。\n", encoding="utf-8")
                 plan.append(f"WRITE {d}/README.md")
-    # 项目内 vendored CLI
-    tools_dir = roles.get("tools") or "tools"
-    tool_target = dest / tools_dir.rstrip("/") / "dsh_project.py"
-    if not tool_target.exists() or args.force:
-        try:
-            tool_target.parent.mkdir(parents=True, exist_ok=True)
-            tool_target.write_text(Path(__file__).read_text(encoding="utf-8"), encoding="utf-8")
-            tool_target.chmod(0o755)
-        except OSError as exc:
-            fail(f"写入 vendored CLI 失败：{tool_target}（{exc}）")
-        plan.append(f"WRITE {tools_dir.rstrip('/')}/dsh_project.py")
+    # 项目内 vendored CLI（仅当显式声明 tools 角色；custom 仓库可不声明）
+    tools_dir = roles.get("tools")
+    if tools_dir:
+        tool_target = dest / str(tools_dir).rstrip("/") / "dsh_project.py"
+        if not tool_target.exists() or args.force:
+            try:
+                tool_target.parent.mkdir(parents=True, exist_ok=True)
+                tool_target.write_text(Path(__file__).read_text(encoding="utf-8"), encoding="utf-8")
+                tool_target.chmod(0o755)
+            except OSError as exc:
+                fail(f"写入 vendored CLI 失败：{tool_target}（{exc}）")
+            plan.append(f"WRITE {str(tools_dir).rstrip('/')}/dsh_project.py")
+    else:
+        plan.append("SKIP  tools/dsh_project.py（未声明 tools 角色：不生成 vendored CLI/CI，CI 可用全局 CLI）")
     if args.git_init and not (dest / ".git").exists():
         subprocess.run(["git", "-C", str(dest), "init", "-q"], check=False)
         plan.append("GIT   init")
@@ -994,8 +1016,7 @@ def cmd_layout(args: argparse.Namespace) -> int:
         warns.append("未检测到 git 仓库，跳过入库边界检查")
     else:
         for glob in (marker.get("tracking") or {}).get("ignore_globs") or []:
-            prefix = glob.rstrip("/")
-            hits = [f for f in tracked if f == prefix or f.startswith(prefix + "/")]
+            hits = [f for f in tracked if path_matches_glob(f, glob)]
             if hits:
                 errors.append(f"派生/交付目录被 git 跟踪：{glob}（{len(hits)} 个文件，例 {hits[0]}）")
         junk = [f for f in tracked if is_junk(f)]
